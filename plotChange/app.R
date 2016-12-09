@@ -4,8 +4,7 @@ library(ggrepel)
 library(DT)
 library(htmltools)
 
-setwd('~/public_git/oecd_pisa_data')
-source('map.R')
+source('/home/ubuntu/oecd_pisa/oecd_pisa_data/map.R')
 
 country_selection <- 
   subset(oecd_pisa_data, !duplicated(iso3c))$iso3c
