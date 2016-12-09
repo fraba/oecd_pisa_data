@@ -50,7 +50,8 @@ ui <- bootstrapPage(
                     style = 'text-align: center;')),
   absolutePanel(bottom = -10, left = 50,
                 div(tags$p(tags$a('Design: @FrBailo', href = 'http://www.francescobailo.net/'), " | ",
-                           tags$a('Code: GitHub', href = ''))))
+                           tags$a('Code: GitHub', href = 'https://github.com/fraba/oecd_pisa_data')),
+                    style = 'font-size: 70%'))
 )
 
 # Define server logic required to draw a histogram
