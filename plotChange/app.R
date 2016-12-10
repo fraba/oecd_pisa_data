@@ -4,7 +4,9 @@ library(ggrepel)
 library(DT)
 library(htmltools)
 
-source('/home/ubuntu/oecd_pisa/oecd_pisa_data/map.R')
+# source('/home/ubuntu/oecd_pisa/oecd_pisa_data/map.R')
+setwd('~/public_git/oecd_pisa_data')
+source('map.R')
 
 country_selection <- 
   subset(oecd_pisa_data, !duplicated(iso3c))$iso3c
@@ -75,12 +77,12 @@ server <- function(input, output) {
   output$cnt_table <- DT::renderDataTable({
     tmp_math_df <-
       subset(oecd_pisa_data, iso3c == input$cnt & Variable == 'mathematics', 
-           select = c('Year','Average', 'annual_highincome_mean', 'of_mean'))
+             select = c('Year','Average', 'annual_highincome_mean', 'of_mean'))
     tmp_math_df$Year <- as.integer(tmp_math_df$Year)
     tmp_math_df$of_mean <- tmp_math_df$of_mean * 100
     names(tmp_math_df) <- c("Year",
-                       names(country_selection)[country_selection == input$cnt],
-                                                'OECD', '%')
+                            names(country_selection)[country_selection == input$cnt],
+                            'OECD', '%')
     tmp_read_df <-
       subset(oecd_pisa_data, iso3c == input$cnt & Variable == 'reading',
              select = c('Year','Average', 'annual_highincome_mean', 'of_mean'))
@@ -89,7 +91,7 @@ server <- function(input, output) {
     names(tmp_read_df) <- c("Year",
                             names(country_selection)[country_selection == input$cnt],
                             'OECD', '%')
-
+    
     tmp_df <- merge(tmp_math_df, tmp_read_df, by = 'Year', all.x = TRUE, all.y = TRUE)
     DT::datatable(tmp_df, 
                   container = table_tag, rownames = FALSE,
@@ -121,12 +123,13 @@ server <- function(input, output) {
       geom_point(data = subset(math_read_df, iso3c == input$cnt), 
                  aes(x=reading, y=mathematics, label = Year)) +
       theme(panel.border = element_blank())
-    })
+  })
   
   output$zoomplot <- renderPlot({
     
     if (is.null(ranges$x)) {
-      ggplot(math_read_df, aes(x=reading, y=mathematics)) +
+      zp <- 
+        ggplot(math_read_df, aes(x=reading, y=mathematics)) +
         geom_point(alpha = 0.3) +
         scale_y_continuous(limits = c(.84,1.16)) +
         scale_x_continuous(limits = c(.87,1.13)) +
@@ -137,7 +140,8 @@ server <- function(input, output) {
                  label = "Select and double-click\n the main plot\nto zoom in") +
         labs(title = 'zoom')
     } else {
-      ggplot(math_read_df, aes(x=reading, y=mathematics)) +
+      zp <- 
+        ggplot(math_read_df, aes(x=reading, y=mathematics)) +
         geom_point(alpha = 0.3) +
         lims(x = ranges$x, y = ranges$y) +
         geom_vline(xintercept = 1) +
@@ -158,6 +162,7 @@ server <- function(input, output) {
                    aes(x=reading, y=mathematics, label = Year)) +
         labs(title = 'zoom')
     }
+    zp
   })
   
 }

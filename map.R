@@ -1,4 +1,5 @@
-load('/home/ubuntu/oecd_pisa/oecd_pisa_data/oecd_pisa_data.RData')
+setwd('~/public_git/oecd_pisa_data')
+load('oecd_pisa_data.RData')
 
 oecd_pisa_data <- subset(oecd_pisa_data, wb_class == "H")
 
