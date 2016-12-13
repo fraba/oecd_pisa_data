@@ -3,6 +3,7 @@ library(ggplot2)
 library(ggrepel)
 library(DT)
 library(htmltools)
+library(scales)
 
 # source('/home/ubuntu/oecd_pisa/oecd_pisa_data/map.R')
 setwd('~/public_git/oecd_pisa_data')
@@ -41,10 +42,10 @@ ui <- bootstrapPage(
                                country_selection),
                 div(dataTableOutput('cnt_table'),
                     style = "font-size:60%; background-color: white;")
-                
   ),
   absolutePanel(bottom = 40, right = 40,
-                plotOutput('zoomplot', height = '250px', width = '400px')),
+                plotOutput('zoomplot', height = '250px', width = '400px'),
+                checkboxInput('label_plot', "Label plot", value = FALSE)),
   absolutePanel(top = 10, right = 50,
                 div(tags$h2('OECD PISA Data'),
                     tags$a("www.oecd.org/pisa/data", href = 'http://www.oecd.org/pisa/data/'),
@@ -56,15 +57,28 @@ ui <- bootstrapPage(
 )
 
 # Define server logic required to draw a histogram
-server <- function(input, output) {
+server <- function(input, output, session) {
+  
+  main_plot_x_lims <- c(.87,1.13)
+  main_plot_y_lims <- c(.84,1.16)
   
   ranges <- reactiveValues(x = NULL, y = NULL)
   
   # When a double-click happens, check if there's a brush on the plot.
   # If so, zoom to the brush bounds; if not, reset the zoom.
   observeEvent(input$mainplot_dblclick, {
+
     brush <- input$mainplot_brush
     if (!is.null(brush)) {
+    
+      # ranges$x <- rescale(c(brush$xmin, brush$xmax), 
+      #                     from = c(0, session$clientData[["output_change_plot_width"]]),
+      #                     to = main_plot_x_lims)
+      # 
+      # ranges$y <- rescale(c(brush$ymin, brush$ymax), 
+      #                     from = c(0, session$clientData[["output_change_plot_height"]]),
+      #                     to = main_plot_y_lims)
+      
       ranges$x <- c(brush$xmin, brush$xmax)
       ranges$y <- c(brush$ymin, brush$ymax)
       
@@ -103,8 +117,8 @@ server <- function(input, output) {
   output$change_plot <- renderPlot({
     ggplot(math_read_df, aes(x=reading, y=mathematics)) +
       geom_point(alpha = 0.3) +
-      scale_y_continuous(position = "right", limits = c(.84,1.16)) +
-      scale_x_continuous(limits = c(.87,1.13)) +
+      scale_y_continuous(position = "right", limits = main_plot_y_lims) +
+      scale_x_continuous(limits = main_plot_x_lims) +
       geom_vline(xintercept = 1) +
       geom_hline(yintercept = 1) +
       theme_bw() +
@@ -131,8 +145,8 @@ server <- function(input, output) {
       zp <- 
         ggplot(math_read_df, aes(x=reading, y=mathematics)) +
         geom_point(alpha = 0.3) +
-        scale_y_continuous(limits = c(.84,1.16)) +
-        scale_x_continuous(limits = c(.87,1.13)) +
+        scale_y_continuous(limits = main_plot_y_lims) +
+        scale_x_continuous(limits = main_plot_x_lims) +
         geom_vline(xintercept = 1) +
         geom_hline(yintercept = 1) +
         geom_rect(fill="white", aes(xmin=0.95,xmax=1.05,ymin=.95,ymax=1.05), alpha = 0.3) +
@@ -140,7 +154,8 @@ server <- function(input, output) {
                  label = "Select and double-click\n the main plot\nto zoom in") +
         labs(title = 'zoom')
     } else {
-      zp <- 
+      if (input$label_plot == FALSE ) {
+        zp <-
         ggplot(math_read_df, aes(x=reading, y=mathematics)) +
         geom_point(alpha = 0.3) +
         lims(x = ranges$x, y = ranges$y) +
@@ -159,10 +174,32 @@ server <- function(input, output) {
                          segment.color = 'red',
                          alpha = 0.8) +
         geom_point(data = subset(math_read_df, iso3c == input$cnt), 
-                   aes(x=reading, y=mathematics, label = Year)) +
-        labs(title = 'zoom')
+                   aes(x=reading, y=mathematics, label = Year))
+      } else {
+        zp <-
+        ggplot(math_read_df, aes(x=reading, y=mathematics, label = iso3c)) +
+          geom_point(alpha = 0.3) +
+          geom_text() +
+          lims(x = ranges$x, y = ranges$y) +
+          geom_vline(xintercept = 1) +
+          geom_hline(yintercept = 1) +
+          # theme_bw() +
+          geom_segment(data = subset(math_read_start_end, iso3c == input$cnt), 
+                       aes(x = start_reading,
+                           y = start_mathematics,
+                           xend = end_reading,
+                           yend = end_mathematics),
+                       arrow = arrow(length = unit(0.04, "npc")),
+                       alpha = .5) +
+          geom_label_repel(data = subset(math_read_df, iso3c == input$cnt), 
+                           aes(x=reading, y=mathematics, label = Year),
+                           segment.color = 'red',
+                           alpha = 0.8) +
+          geom_point(data = subset(math_read_df, iso3c == input$cnt), 
+                     aes(x=reading, y=mathematics, label = Year))
+      }
     }
-    zp
+    return(zp)
   })
   
 }
